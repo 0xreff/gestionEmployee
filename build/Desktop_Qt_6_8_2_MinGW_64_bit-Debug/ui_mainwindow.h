@@ -30,9 +30,9 @@ class Ui_MainWindow
 {
 public:
     QWidget *centralwidget;
-    QGraphicsView *graphicsView_2;
+    QGraphicsView *update;
     QTabWidget *Gestion;
-    QWidget *Ajouter_2;
+    QWidget *Ajouter_1;
     QLineEdit *Nom;
     QLineEdit *Prenom;
     QLabel *label_2;
@@ -87,6 +87,27 @@ public:
     QPushButton *updated_btn;
     QLabel *label_19;
     QPushButton *select;
+    QWidget *tab;
+    QLabel *label_20;
+    QLabel *label_total;
+    QLabel *label_21;
+    QLabel *label_men;
+    QLabel *label_men_percent;
+    QLabel *label_women_percent;
+    QLabel *label_42;
+    QLabel *label_women;
+    QLabel *label_43;
+    QLabel *label_admin;
+    QLabel *label_44;
+    QLabel *label_transporteurs;
+    QLabel *label_45;
+    QLabel *label_employees;
+    QLabel *label_46;
+    QLabel *label_etudiants;
+    QFrame *line_3;
+    QFrame *frame;
+    QLabel *label_no_photo;
+    QLabel *label_47;
     QLabel *label;
     QPushButton *pushButton;
 
@@ -124,10 +145,10 @@ public:
 "border: 1px solid gray;\n"
 "border-radius: 15px;\n"
 "}"));
-        graphicsView_2 = new QGraphicsView(centralwidget);
-        graphicsView_2->setObjectName("graphicsView_2");
-        graphicsView_2->setGeometry(QRect(0, 0, 1081, 571));
-        graphicsView_2->setStyleSheet(QString::fromUtf8("/* Style pour la barre de navigation (QNavBar) */\n"
+        update = new QGraphicsView(centralwidget);
+        update->setObjectName("update");
+        update->setGeometry(QRect(0, 0, 1081, 571));
+        update->setStyleSheet(QString::fromUtf8("/* Style pour la barre de navigation (QNavBar) */\n"
 "QGraphicsView {\n"
 "    background-color: #003366; /* Bleu roi */\n"
 "    padding: 10px;\n"
@@ -171,31 +192,31 @@ public:
 "QLineEdit{\n"
 "border-radius:10px;\n"
 "}"));
-        Ajouter_2 = new QWidget();
-        Ajouter_2->setObjectName("Ajouter_2");
-        Nom = new QLineEdit(Ajouter_2);
+        Ajouter_1 = new QWidget();
+        Ajouter_1->setObjectName("Ajouter_1");
+        Nom = new QLineEdit(Ajouter_1);
         Nom->setObjectName("Nom");
         Nom->setGeometry(QRect(150, 20, 341, 31));
         Nom->setStyleSheet(QString::fromUtf8(""));
-        Prenom = new QLineEdit(Ajouter_2);
+        Prenom = new QLineEdit(Ajouter_1);
         Prenom->setObjectName("Prenom");
         Prenom->setGeometry(QRect(150, 70, 341, 31));
-        label_2 = new QLabel(Ajouter_2);
+        label_2 = new QLabel(Ajouter_1);
         label_2->setObjectName("label_2");
         label_2->setGeometry(QRect(80, 20, 41, 31));
         label_2->setStyleSheet(QString::fromUtf8(""));
-        label_3 = new QLabel(Ajouter_2);
+        label_3 = new QLabel(Ajouter_1);
         label_3->setObjectName("label_3");
         label_3->setGeometry(QRect(70, 70, 61, 31));
         label_3->setStyleSheet(QString::fromUtf8(""));
-        Tel = new QLineEdit(Ajouter_2);
+        Tel = new QLineEdit(Ajouter_1);
         Tel->setObjectName("Tel");
         Tel->setGeometry(QRect(150, 130, 341, 31));
-        label_4 = new QLabel(Ajouter_2);
+        label_4 = new QLabel(Ajouter_1);
         label_4->setObjectName("label_4");
         label_4->setGeometry(QRect(60, 130, 81, 31));
         label_4->setStyleSheet(QString::fromUtf8(""));
-        line = new QFrame(Ajouter_2);
+        line = new QFrame(Ajouter_1);
         line->setObjectName("line");
         line->setGeometry(QRect(510, 20, 21, 261));
         line->setStyleSheet(QString::fromUtf8("border-top:none;\n"
@@ -204,56 +225,56 @@ public:
 "color:black;"));
         line->setFrameShape(QFrame::Shape::VLine);
         line->setFrameShadow(QFrame::Shadow::Sunken);
-        Email = new QLineEdit(Ajouter_2);
+        Email = new QLineEdit(Ajouter_1);
         Email->setObjectName("Email");
         Email->setGeometry(QRect(150, 190, 341, 31));
-        label_5 = new QLabel(Ajouter_2);
+        label_5 = new QLabel(Ajouter_1);
         label_5->setObjectName("label_5");
         label_5->setGeometry(QRect(90, 190, 51, 31));
         label_5->setStyleSheet(QString::fromUtf8(""));
-        Gender = new QComboBox(Ajouter_2);
+        Gender = new QComboBox(Ajouter_1);
         Gender->addItem(QString());
         Gender->addItem(QString());
         Gender->setObjectName("Gender");
         Gender->setGeometry(QRect(150, 250, 331, 22));
         Gender->setStyleSheet(QString::fromUtf8(""));
-        label_6 = new QLabel(Ajouter_2);
+        label_6 = new QLabel(Ajouter_1);
         label_6->setObjectName("label_6");
         label_6->setGeometry(QRect(80, 240, 61, 31));
         label_6->setStyleSheet(QString::fromUtf8(""));
-        Dob = new QDateEdit(Ajouter_2);
+        Dob = new QDateEdit(Ajouter_1);
         Dob->setObjectName("Dob");
         Dob->setGeometry(QRect(710, 20, 311, 31));
-        label_7 = new QLabel(Ajouter_2);
+        label_7 = new QLabel(Ajouter_1);
         label_7->setObjectName("label_7");
         label_7->setGeometry(QRect(550, 20, 151, 31));
         label_7->setStyleSheet(QString::fromUtf8(""));
-        Pass = new QLineEdit(Ajouter_2);
+        Pass = new QLineEdit(Ajouter_1);
         Pass->setObjectName("Pass");
         Pass->setGeometry(QRect(710, 120, 311, 31));
         Pass->setStyleSheet(QString::fromUtf8(""));
-        label_8 = new QLabel(Ajouter_2);
+        label_8 = new QLabel(Ajouter_1);
         label_8->setObjectName("label_8");
         label_8->setGeometry(QRect(560, 120, 111, 31));
         label_8->setStyleSheet(QString::fromUtf8(""));
-        Photo = new QLineEdit(Ajouter_2);
+        Photo = new QLineEdit(Ajouter_1);
         Photo->setObjectName("Photo");
         Photo->setGeometry(QRect(710, 170, 311, 31));
         Photo->setStyleSheet(QString::fromUtf8(""));
-        label_9 = new QLabel(Ajouter_2);
+        label_9 = new QLabel(Ajouter_1);
         label_9->setObjectName("label_9");
         label_9->setGeometry(QRect(570, 170, 111, 31));
         label_9->setStyleSheet(QString::fromUtf8(""));
-        upload_btn = new QPushButton(Ajouter_2);
+        upload_btn = new QPushButton(Ajouter_1);
         upload_btn->setObjectName("upload_btn");
         upload_btn->setGeometry(QRect(890, 210, 131, 31));
         upload_btn->setStyleSheet(QString::fromUtf8("border-radius:10px;\n"
 "border:1px solid gray;"));
-        label_10 = new QLabel(Ajouter_2);
+        label_10 = new QLabel(Ajouter_1);
         label_10->setObjectName("label_10");
         label_10->setGeometry(QRect(560, 70, 151, 31));
         label_10->setStyleSheet(QString::fromUtf8(""));
-        Poste = new QComboBox(Ajouter_2);
+        Poste = new QComboBox(Ajouter_1);
         Poste->addItem(QString());
         Poste->addItem(QString());
         Poste->addItem(QString());
@@ -261,19 +282,19 @@ public:
         Poste->setObjectName("Poste");
         Poste->setGeometry(QRect(710, 80, 311, 22));
         Poste->setStyleSheet(QString::fromUtf8(""));
-        Ajouter = new QPushButton(Ajouter_2);
+        Ajouter = new QPushButton(Ajouter_1);
         Ajouter->setObjectName("Ajouter");
         Ajouter->setGeometry(QRect(620, 260, 261, 31));
         Ajouter->setStyleSheet(QString::fromUtf8("border-radius:10px;\n"
 "border:1px solid gray;\n"
 "color:#01ff11;"));
-        Reset = new QPushButton(Ajouter_2);
+        Reset = new QPushButton(Ajouter_1);
         Reset->setObjectName("Reset");
         Reset->setGeometry(QRect(890, 260, 131, 31));
         Reset->setStyleSheet(QString::fromUtf8("border-radius:10px;\n"
 "border:1px solid gray;\n"
 "background:#ff0101;"));
-        Gestion->addTab(Ajouter_2, QString());
+        Gestion->addTab(Ajouter_1, QString());
         Read = new QWidget();
         Read->setObjectName("Read");
         tableView = new QTableView(Read);
@@ -422,6 +443,96 @@ public:
 "border:1px solid gray;\n"
 "background:#f1f1f1;"));
         Gestion->addTab(Modifier, QString());
+        tab = new QWidget();
+        tab->setObjectName("tab");
+        label_20 = new QLabel(tab);
+        label_20->setObjectName("label_20");
+        label_20->setGeometry(QRect(320, 20, 111, 16));
+        label_total = new QLabel(tab);
+        label_total->setObjectName("label_total");
+        label_total->setGeometry(QRect(450, 20, 49, 16));
+        label_21 = new QLabel(tab);
+        label_21->setObjectName("label_21");
+        label_21->setGeometry(QRect(30, 250, 91, 16));
+        label_men = new QLabel(tab);
+        label_men->setObjectName("label_men");
+        label_men->setGeometry(QRect(150, 250, 21, 16));
+        label_men_percent = new QLabel(tab);
+        label_men_percent->setObjectName("label_men_percent");
+        label_men_percent->setGeometry(QRect(200, 250, 49, 16));
+        label_women_percent = new QLabel(tab);
+        label_women_percent->setObjectName("label_women_percent");
+        label_women_percent->setGeometry(QRect(200, 290, 49, 16));
+        label_42 = new QLabel(tab);
+        label_42->setObjectName("label_42");
+        label_42->setGeometry(QRect(30, 290, 91, 16));
+        label_women = new QLabel(tab);
+        label_women->setObjectName("label_women");
+        label_women->setGeometry(QRect(150, 290, 21, 16));
+        label_43 = new QLabel(tab);
+        label_43->setObjectName("label_43");
+        label_43->setGeometry(QRect(30, 80, 91, 16));
+        label_admin = new QLabel(tab);
+        label_admin->setObjectName("label_admin");
+        label_admin->setGeometry(QRect(140, 80, 21, 16));
+        label_44 = new QLabel(tab);
+        label_44->setObjectName("label_44");
+        label_44->setGeometry(QRect(30, 130, 131, 16));
+        label_transporteurs = new QLabel(tab);
+        label_transporteurs->setObjectName("label_transporteurs");
+        label_transporteurs->setGeometry(QRect(170, 130, 21, 16));
+        label_45 = new QLabel(tab);
+        label_45->setObjectName("label_45");
+        label_45->setGeometry(QRect(30, 170, 111, 21));
+        label_employees = new QLabel(tab);
+        label_employees->setObjectName("label_employees");
+        label_employees->setGeometry(QRect(150, 170, 21, 16));
+        label_46 = new QLabel(tab);
+        label_46->setObjectName("label_46");
+        label_46->setGeometry(QRect(30, 210, 111, 16));
+        label_etudiants = new QLabel(tab);
+        label_etudiants->setObjectName("label_etudiants");
+        label_etudiants->setGeometry(QRect(150, 210, 21, 16));
+        line_3 = new QFrame(tab);
+        line_3->setObjectName("line_3");
+        line_3->setGeometry(QRect(400, -10, 16, 341));
+        line_3->setFrameShape(QFrame::Shape::VLine);
+        line_3->setFrameShadow(QFrame::Shadow::Sunken);
+        frame = new QFrame(tab);
+        frame->setObjectName("frame");
+        frame->setGeometry(QRect(260, 10, 281, 41));
+        frame->setStyleSheet(QString::fromUtf8("border-left:none;\n"
+"border-right:none;\n"
+"border-radius:1px;"));
+        frame->setFrameShape(QFrame::Shape::StyledPanel);
+        frame->setFrameShadow(QFrame::Shadow::Raised);
+        label_no_photo = new QLabel(tab);
+        label_no_photo->setObjectName("label_no_photo");
+        label_no_photo->setGeometry(QRect(600, 75, 21, 21));
+        label_47 = new QLabel(tab);
+        label_47->setObjectName("label_47");
+        label_47->setGeometry(QRect(440, 70, 161, 31));
+        Gestion->addTab(tab, QString());
+        line_3->raise();
+        frame->raise();
+        label_20->raise();
+        label_total->raise();
+        label_21->raise();
+        label_men->raise();
+        label_men_percent->raise();
+        label_women_percent->raise();
+        label_42->raise();
+        label_women->raise();
+        label_43->raise();
+        label_admin->raise();
+        label_44->raise();
+        label_transporteurs->raise();
+        label_45->raise();
+        label_employees->raise();
+        label_46->raise();
+        label_etudiants->raise();
+        label_no_photo->raise();
+        label_47->raise();
         label = new QLabel(centralwidget);
         label->setObjectName("label");
         label->setGeometry(QRect(20, 20, 311, 51));
@@ -436,7 +547,7 @@ public:
 
         retranslateUi(MainWindow);
 
-        Gestion->setCurrentIndex(1);
+        Gestion->setCurrentIndex(3);
 
 
         QMetaObject::connectSlotsByName(MainWindow);
@@ -465,7 +576,7 @@ public:
 
         Ajouter->setText(QCoreApplication::translate("MainWindow", "Ajouter", nullptr));
         Reset->setText(QCoreApplication::translate("MainWindow", "Reset", nullptr));
-        Gestion->setTabText(Gestion->indexOf(Ajouter_2), QString());
+        Gestion->setTabText(Gestion->indexOf(Ajouter_1), QCoreApplication::translate("MainWindow", "Ajouter", nullptr));
         Actualiser->setText(QCoreApplication::translate("MainWindow", "Actualiser", nullptr));
         comboBox->setItemText(0, QCoreApplication::translate("MainWindow", "Select ...", nullptr));
         comboBox->setItemText(1, QCoreApplication::translate("MainWindow", "ID", nullptr));
@@ -477,7 +588,7 @@ public:
         search_btn->setText(QCoreApplication::translate("MainWindow", "Search", nullptr));
         trier->setText(QCoreApplication::translate("MainWindow", "Trier ", nullptr));
         delete_btn->setText(QCoreApplication::translate("MainWindow", "SELECT AND DELETE", nullptr));
-        Gestion->setTabText(Gestion->indexOf(Read), QCoreApplication::translate("MainWindow", "Page", nullptr));
+        Gestion->setTabText(Gestion->indexOf(Read), QCoreApplication::translate("MainWindow", "Afficher", nullptr));
         Posteu->setItemText(0, QCoreApplication::translate("MainWindow", "Admin", nullptr));
         Posteu->setItemText(1, QCoreApplication::translate("MainWindow", "Employee", nullptr));
         Posteu->setItemText(2, QCoreApplication::translate("MainWindow", "Transporteur", nullptr));
@@ -502,7 +613,26 @@ public:
         updated_btn->setText(QCoreApplication::translate("MainWindow", "Modifier", nullptr));
         label_19->setText(QCoreApplication::translate("MainWindow", "Photo", nullptr));
         select->setText(QCoreApplication::translate("MainWindow", "Select", nullptr));
-        Gestion->setTabText(Gestion->indexOf(Modifier), QCoreApplication::translate("MainWindow", "Page", nullptr));
+        Gestion->setTabText(Gestion->indexOf(Modifier), QCoreApplication::translate("MainWindow", "Modifier", nullptr));
+        label_20->setText(QCoreApplication::translate("MainWindow", "TOTAL USERS:", nullptr));
+        label_total->setText(QCoreApplication::translate("MainWindow", "-", nullptr));
+        label_21->setText(QCoreApplication::translate("MainWindow", "N\302\260 Homme:", nullptr));
+        label_men->setText(QCoreApplication::translate("MainWindow", "-", nullptr));
+        label_men_percent->setText(QCoreApplication::translate("MainWindow", "-", nullptr));
+        label_women_percent->setText(QCoreApplication::translate("MainWindow", "-", nullptr));
+        label_42->setText(QCoreApplication::translate("MainWindow", "N\302\260 Femme:", nullptr));
+        label_women->setText(QCoreApplication::translate("MainWindow", "-", nullptr));
+        label_43->setText(QCoreApplication::translate("MainWindow", "N\302\260 Admins:", nullptr));
+        label_admin->setText(QCoreApplication::translate("MainWindow", "-", nullptr));
+        label_44->setText(QCoreApplication::translate("MainWindow", "N\302\260 Transporteur:", nullptr));
+        label_transporteurs->setText(QCoreApplication::translate("MainWindow", "-", nullptr));
+        label_45->setText(QCoreApplication::translate("MainWindow", "N\302\260 Employee:", nullptr));
+        label_employees->setText(QCoreApplication::translate("MainWindow", "-", nullptr));
+        label_46->setText(QCoreApplication::translate("MainWindow", "N\302\260 Etudiant:", nullptr));
+        label_etudiants->setText(QCoreApplication::translate("MainWindow", "-", nullptr));
+        label_no_photo->setText(QCoreApplication::translate("MainWindow", "-", nullptr));
+        label_47->setText(QCoreApplication::translate("MainWindow", "Utilisateur no photo:", nullptr));
+        Gestion->setTabText(Gestion->indexOf(tab), QCoreApplication::translate("MainWindow", "Stat", nullptr));
         label->setText(QCoreApplication::translate("MainWindow", "Gestion Employee", nullptr));
         pushButton->setText(QCoreApplication::translate("MainWindow", "Export", nullptr));
     } // retranslateUi

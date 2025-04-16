@@ -18,11 +18,13 @@
 #include <QPainter>
 #include <QDialog>
 #include <QLabel>
-#include<QFileDialog>
-#include<QSqlRecord>
+#include <QFileDialog>
+#include <QSqlRecord>
 #include <QSqlTableModel>
+#include <QInputDialog>
+#include <QFileDialog>
+#include <QPrinter>
 #include "connection.h"
-#include "EmployeeQueryModel.h"
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -61,6 +63,16 @@ private slots:
     void on_select_clicked();
 
     void on_delete_btn_clicked();
+
+    int getCountFromQuery(const QString &queryStr);
+
+    void updateStatistics();
+
+    void on_pushButton_clicked();
+
+    void exportToPDF();
+
+    void exportToExcel();
 
 private:
     Ui::MainWindow *ui;

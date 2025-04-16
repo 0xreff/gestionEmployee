@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui sql
-
+QT += printsupport
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = Atelier_Connexion
@@ -26,14 +26,12 @@ CONFIG += c++11
 
 SOURCES += \
     employee.cpp \
-    employeequerymodel.cpp \
         main.cpp \
         mainwindow.cpp \
     connection.cpp
 
 HEADERS += \
     employee.h \
-    employeequerymodel.h \
         mainwindow.h \
     connection.h
 

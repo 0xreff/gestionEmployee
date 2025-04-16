@@ -23,88 +23,85 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_Ajouter_clicked()
 {
-        // Get data from the UI elements
-        QString nom = ui->Nom->text();
-        QString prenom = ui->Prenom->text();
-        QString tel = ui->Tel->text();
-        QString email = ui->Email->text();
-        QString password = ui->Pass->text();
-        QString gender = ui->Gender->currentText();
-        QString poste = ui->Poste->currentText();
-        QDate dob = ui->Dob->date();
-        if (nom.isEmpty() || prenom.isEmpty() || tel.isEmpty() || email.isEmpty()) {
-            QMessageBox::warning(this, "Input Error", "Please fill in all required fields.");
-            return;
-        }
-        QRegularExpression telRegex("^\\d{8}$");
-        QRegularExpressionMatch telMatch = telRegex.match(tel);
-        if (!telMatch.hasMatch()) {
-            QMessageBox::critical(this, "Invalid Input", "7atitlak +216 and must contain exactly 8 digits.");
-            return;
-        }
+    QString nom = ui->Nom->text();
+    QString prenom = ui->Prenom->text();
+    QString tel = ui->Tel->text();
+    QString email = ui->Email->text();
+    QString password = ui->Pass->text();
+    QString gender = ui->Gender->currentText();
+    QString poste = ui->Poste->currentText();
+    QDate dob = ui->Dob->date();
+    if (nom.isEmpty() || prenom.isEmpty() || tel.isEmpty() || email.isEmpty()) {
+        QMessageBox::warning(this, "Input Error", "Please fill in all required fields.");
+        return;
+    }
+    QRegularExpression telRegex("^\\d{8}$");
+    QRegularExpressionMatch telMatch = telRegex.match(tel);
+    if (!telMatch.hasMatch()) {
+        QMessageBox::critical(this, "Invalid Input", "must contain exactly 8 digits.");
+        return;
+    }
 
-        // 2. Validate email - must contain @ and a valid domain
-        QRegularExpression emailRegex("^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$");
-        QRegularExpressionMatch emailMatch = emailRegex.match(email);
-        if (!emailMatch.hasMatch()) {
-            QMessageBox::critical(this, "Invalid Input", "The email address is not valid.");
-            return;
-        }
+    // 2. Validate email - must contain @ and a valid domain
+    QRegularExpression emailRegex("^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$");
+    QRegularExpressionMatch emailMatch = emailRegex.match(email);
+    if (!emailMatch.hasMatch()) {
+        QMessageBox::critical(this, "Invalid Input", "The email address is not valid.");
+        return;
+    }
 
-        // 3. Validate password - must have at least 6 characters, with both uppercase and lowercase letters
-        QRegularExpression passwordRegex("^(?=.*[a-z])(?=.*[A-Z]).{6,}$");
-        QRegularExpressionMatch passwordMatch = passwordRegex.match(password);
-        if (!passwordMatch.hasMatch()) {
-            QMessageBox::critical(this, "Invalid Input", "verifiy Password Majuscile w Miniscule");
-            return;
-        }
-        QDate currentDate = QDate::currentDate();
+    // 3. Validate password - must have at least 6 characters, with both uppercase and lowercase letters
+    QRegularExpression passwordRegex("^(?=.*[a-z])(?=.*[A-Z]).{6,}$");
+    QRegularExpressionMatch passwordMatch = passwordRegex.match(password);
+    if (!passwordMatch.hasMatch()) {
+        QMessageBox::critical(this, "Invalid Input", "verifiy Password Majuscile w Miniscule");
+        return;
+    }
+    QDate currentDate = QDate::currentDate();
 
-        int age = currentDate.year() - dob.year();
+    int age = currentDate.year() - dob.year();
 
-        if (currentDate.month() < dob.month() || (currentDate.month() == dob.month() && currentDate.day() < dob.day())) {
-            age--;  // The person hasn't had their birthday yet this year, so subtract one year
-        }
+    if (currentDate.month() < dob.month() || (currentDate.month() == dob.month() && currentDate.day() < dob.day())) {
+        age--;  // The person hasn't had their birthday yet this year, so subtract one year
+    }
 
-        if (age < 18) {
-            QMessageBox::critical(this, "Invalid Input", "The person must be at least 18 years old.");
-            return;
-        }
-        if (age > 100) {
-            QMessageBox::critical(this, "Invalid Input", "Ohh ! \nis This person Died 🤨!\nPlease enter a valid Age.");
-            return;
-        }
+    if (age < 18) {
+        QMessageBox::critical(this, "Invalid Input", "The person must be at least 18 years old.");
+        return;
+    }
+    if (age > 100) {
+        QMessageBox::critical(this, "Invalid Input", "Ohh ! \nis This person Died 🤨!\nPlease enter a valid Age.");
+        return;
+    }
 
-        QString imagePath = ui->Photo->text();
-        QFile imageFile(imagePath);
-        QByteArray photoData;
-        if (imageFile.open(QIODevice::ReadOnly)) {
-            photoData = imageFile.readAll();
-        }
-//***********************************************************************************************************
-        QSqlQuery query;
-        query.prepare("INSERT INTO employees (nom, prenom, photo, tel, gender, email, password, dob, poste) "
-                      "VALUES (:nom, :prenom, :photo, :tel, :gender, :email, :password, :dob, :poste)");
+    QString imagePath = ui->Photo->text();
+    QFile imageFile(imagePath);
+    QByteArray photoData;
+    if (imageFile.open(QIODevice::ReadOnly)) {
+        photoData = imageFile.readAll();
+    }
+    //***********************************************************************************************************
+    QSqlQuery query;
+    query.prepare("INSERT INTO employees (nom, prenom, photo, tel, gender, email, password, dob, poste) "
+                  "VALUES (:nom, :prenom, :photo, :tel, :gender, :email, :password, :dob, :poste)");
 
-        // Bind values to the query
-        query.bindValue(":nom", nom);
-        query.bindValue(":prenom", prenom);
-        query.bindValue(":photo", photoData);  // Store the image as binary (BLOB)
-        query.bindValue(":tel", tel);
-        query.bindValue(":gender", gender);
-        query.bindValue(":email", email);
-        query.bindValue(":password", password);
-        query.bindValue(":dob", dob);
-        query.bindValue(":poste", poste);
+    // Bind values to the query
+    query.bindValue(":nom", nom);
+    query.bindValue(":prenom", prenom);
+    query.bindValue(":photo", photoData);  // Store the image as binary (BLOB)
+    query.bindValue(":tel", tel);
+    query.bindValue(":gender", gender);
+    query.bindValue(":email", email);
+    query.bindValue(":password", password);
+    query.bindValue(":dob", dob);
+    query.bindValue(":poste", poste);
 
-        // Execute the query
-        if (query.exec()) {
-            QMessageBox::information(this, "Success", "Employee created successfully.");
-        } else {
-            QMessageBox::critical(this, "Error", "Failed to create employee: " + query.lastError().text());
-        }
-
-
+    // Execute the query
+    if (query.exec()) {
+        QMessageBox::information(this, "Success", "Employee created successfully.");
+    } else {
+        QMessageBox::critical(this, "Error", "Failed to create employee: " + query.lastError().text());
+    }
 }
 
 void MainWindow::displayEmployees()
@@ -152,7 +149,8 @@ void MainWindow::on_Reset_clicked()
 
 void MainWindow::on_Actualiser_clicked()
 {
-displayEmployees();
+    displayEmployees();
+    updateStatistics();
 }
 
 void MainWindow::on_tableView_doubleClicked(const QModelIndex &index)
@@ -339,7 +337,6 @@ void MainWindow::on_update_btn_clicked()
 
 void MainWindow::on_updated_btn_clicked()
 {
-    // Retrieve updated data from the fields
     QString nom = ui->Nomu->text();
     QString prenom = ui->Prenomu->text();
     QString tel = ui->Telu->text();
@@ -348,7 +345,7 @@ void MainWindow::on_updated_btn_clicked()
     QString gender = ui->Genderu->currentText();
     QDate dob = ui->Dobu->date();
     QString poste = ui->Posteu->currentText();
-    QString photo = ui->Photou->text();  // Get the photo path from the QLineEdit
+    QString photo = ui->Photou->text();
 
     // Validate input fields
     if (nom.isEmpty() || prenom.isEmpty() || tel.isEmpty() || email.isEmpty()) {
@@ -356,15 +353,13 @@ void MainWindow::on_updated_btn_clicked()
         return;
     }
 
-    // Validate telephone number: must start with +216 and contain exactly 8 digits
-    QRegularExpression telRegex("^\\+216\\d{8}$");
+    QRegularExpression telRegex("^\\d{8}$");
     QRegularExpressionMatch telMatch = telRegex.match(tel);
     if (!telMatch.hasMatch()) {
-        QMessageBox::critical(this, "Invalid Input", "Telephone must start with +216 and contain exactly 8 digits.");
+        QMessageBox::critical(this, "Invalid Input", "Telephone must contain exactly 8 digits.");
         return;
     }
 
-    // Validate email: must be in a valid email format
     QRegularExpression emailRegex("^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$");
     QRegularExpressionMatch emailMatch = emailRegex.match(email);
     if (!emailMatch.hasMatch()) {
@@ -372,7 +367,6 @@ void MainWindow::on_updated_btn_clicked()
         return;
     }
 
-    // Validate password: must have at least 6 characters, with both uppercase and lowercase letters
     QRegularExpression passwordRegex("^(?=.*[a-z])(?=.*[A-Z]).{6,}$");
     QRegularExpressionMatch passwordMatch = passwordRegex.match(password);
     if (!passwordMatch.hasMatch()) {
@@ -380,11 +374,10 @@ void MainWindow::on_updated_btn_clicked()
         return;
     }
 
-    // Validate age: the person must be between 18 and 100 years old
     QDate currentDate = QDate::currentDate();
     int age = currentDate.year() - dob.year();
     if (currentDate.month() < dob.month() || (currentDate.month() == dob.month() && currentDate.day() < dob.day())) {
-        age--;  // The person hasn't had their birthday yet this year, so subtract one year
+        age--;
     }
 
     if (age < 18) {
@@ -397,24 +390,38 @@ void MainWindow::on_updated_btn_clicked()
         return;
     }
 
-    // If everything is validated, proceed with the update
     QByteArray photoData;
+    bool updatePhoto = false;
+
     if (!photo.isEmpty()) {
         QFile photoFile(photo);
         if (photoFile.open(QIODevice::ReadOnly)) {
             photoData = photoFile.readAll();
+            updatePhoto = true;
         } else {
             QMessageBox::warning(this, "Error", "Failed to load photo. Check the file path.");
             return;
         }
+    } else {
+        QMessageBox::StandardButton reply = QMessageBox::question(this, "Remove Photo?",
+                                                                  "Do you want to remove the existing photo?",
+                                                                  QMessageBox::Yes | QMessageBox::No);
+        if (reply == QMessageBox::Yes) {
+            updatePhoto = true;
+        }
     }
 
-    // Now update the database with the validated fields
-    QSqlQuery query;
-    query.prepare("UPDATE employees SET NOM = :nom, PRENOM = :prenom, TEL = :tel, EMAIL = :email, "
-                  "PASSWORD = :password, GENDER = :gender, DOB = :dob, POSTE = :poste, PHOTO = :photo WHERE ID = :id");
+    QString queryString = "UPDATE employees SET NOM = :nom, PRENOM = :prenom, TEL = :tel, EMAIL = :email, "
+                          "PASSWORD = :password, GENDER = :gender, DOB = :dob, POSTE = :poste";
 
-    // Bind the values to the query
+    if (updatePhoto) {
+        queryString += ", PHOTO = :photo";
+    }
+
+    queryString += " WHERE ID = :id";
+
+    QSqlQuery query;
+    query.prepare(queryString);
     query.bindValue(":nom", nom);
     query.bindValue(":prenom", prenom);
     query.bindValue(":tel", tel);
@@ -423,10 +430,12 @@ void MainWindow::on_updated_btn_clicked()
     query.bindValue(":gender", gender);
     query.bindValue(":dob", dob);
     query.bindValue(":poste", poste);
-    query.bindValue(":id", employeeId);  // Use the stored employee ID
-    query.bindValue(":photo", photoData);  // Bind the photo (if available)
+    query.bindValue(":id", employeeId);
 
-    // Execute the query
+    if (updatePhoto) {
+        query.bindValue(":photo", photoData.isEmpty() ? QVariant(QVariant::ByteArray) : photoData);
+    }
+
     if (query.exec()) {
         QMessageBox::information(this, "Success", "Employee data updated successfully.");
         ui->Nomu->clear();
@@ -434,15 +443,15 @@ void MainWindow::on_updated_btn_clicked()
         ui->Telu->clear();
         ui->Emailu->clear();
         ui->Passu->clear();
-        ui->Photou->clear();  // Reset photo QLineEdit
-        ui->Genderu->setCurrentIndex(0);  // Reset to the first item (if applicable)
-        ui->Dobu->setDate(QDate::currentDate());  // Reset to current date
-        ui->Posteu->setCurrentIndex(0);  // Reset to the first item (if applicable)
-
+        ui->Photou->clear();
+        ui->Genderu->setCurrentIndex(0);
+        ui->Dobu->setDate(QDate::currentDate());
+        ui->Posteu->setCurrentIndex(0);
     } else {
         QMessageBox::critical(this, "Error", "Failed to update employee: " + query.lastError().text());
     }
 }
+
 
 void MainWindow::on_trier_clicked()
 {
@@ -592,6 +601,139 @@ void MainWindow::on_delete_btn_clicked()
 
         // Refresh the table after deletion
         displayEmployees();
+    }
+}
+
+int MainWindow::getCountFromQuery(const QString &queryStr)
+{
+    QSqlQuery query;
+    if (query.exec(queryStr)) {
+        if (query.next()) {
+            return query.value(0).toInt();
+        }
+    } else {
+        qDebug() << "Query failed:" << query.lastError().text();
+    }
+    return 0;
+}
+
+void MainWindow::updateStatistics()
+{
+    ui->label_total->setText(QString::number(getCountFromQuery("SELECT COUNT(*) FROM employees")));
+    ui->label_men->setText(QString::number(getCountFromQuery("SELECT COUNT(*) FROM employees WHERE gender = 'Homme'")));
+    ui->label_women->setText(QString::number(getCountFromQuery("SELECT COUNT(*) FROM employees WHERE gender = 'Femme'")));
+    ui->label_admin->setText(QString::number(getCountFromQuery("SELECT COUNT(*) FROM employees WHERE poste = 'Admin'")));
+    ui->label_transporteurs->setText(QString::number(getCountFromQuery("SELECT COUNT(*) FROM employees WHERE poste = 'Transporteur'")));
+    ui->label_employees->setText(QString::number(getCountFromQuery("SELECT COUNT(*) FROM employees WHERE poste = 'Employee'")));
+    ui->label_etudiants->setText(QString::number(getCountFromQuery("SELECT COUNT(*) FROM employees WHERE poste = 'Etudiant'")));
+    ui->label_no_photo->setText(QString::number(getCountFromQuery("SELECT COUNT(*) FROM employees WHERE photo IS NULL OR photo = ''")));
+
+
+    int total = getCountFromQuery("SELECT COUNT(*) FROM employees");
+    int men = getCountFromQuery("SELECT COUNT(*) FROM employees WHERE gender = 'Homme'");
+    int women = getCountFromQuery("SELECT COUNT(*) FROM employees WHERE gender = 'Femme'");
+
+    double menPercent = 0.0, womenPercent = 0.0;
+    if (total > 0) {
+        menPercent = (men * 100.0) / total;
+        womenPercent = (women * 100.0) / total;
+    }
+
+
+    ui->label_men_percent->setText(QString::number(menPercent, 'f', 1) + "%");
+    ui->label_women_percent->setText(QString::number(womenPercent, 'f', 1) + "%");
+}
+
+void MainWindow::exportToPDF()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, "Save as PDF", "", "PDF Files (*.pdf)");
+
+    if (fileName.isEmpty())
+        return;
+
+    QPrinter printer(QPrinter::HighResolution);
+    printer.setOutputFormat(QPrinter::PdfFormat);
+    printer.setOutputFileName(fileName);
+
+    QTextDocument doc;
+    QString html;
+
+    html += "<table width='110%' cellspacing='0' cellpadding='2'>";
+    html += "<thead><tr>";
+    for (int col = 0; col < ui->tableView->model()->columnCount(); ++col) {
+        html += "<th border-style='dotted'>" + ui->tableView->model()->headerData(col, Qt::Horizontal).toString() + "</th>";
+    }
+    html += "</tr></thead><tbody>";
+
+    for (int row = 0; row < ui->tableView->model()->rowCount(); ++row) {
+        html += "<tr>";
+        for (int col = 0; col < ui->tableView->model()->columnCount(); ++col) {
+            html += "<td border-style='dotted'>" + ui->tableView->model()->index(row, col).data().toString() + "</td>";
+        }
+        html += "</tr>";
+    }
+
+    html += "</tbody></table>";
+
+    doc.setHtml(html);
+    doc.print(&printer);
+
+    QMessageBox::information(this, "Export Successful", "Data successfully exported to PDF.");
+}
+
+
+void MainWindow::exportToExcel()
+{
+    QString fileName = QFileDialog::getSaveFileName(this, "Save as Excel", "", "Excel Files (*.csv)");
+
+    if (fileName.isEmpty())
+        return;
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, "Error", "Unable to open file for writing.");
+        return;
+    }
+
+    QTextStream out(&file);
+
+    // Write headers
+    for (int col = 0; col < ui->tableView->model()->columnCount(); ++col) {
+        out << ui->tableView->model()->headerData(col, Qt::Horizontal).toString();
+        if (col < ui->tableView->model()->columnCount() - 1)
+            out << ",";
+    }
+    out << "\n";
+
+    // Write data
+    for (int row = 0; row < ui->tableView->model()->rowCount(); ++row) {
+        for (int col = 0; col < ui->tableView->model()->columnCount(); ++col) {
+            out << ui->tableView->model()->index(row, col).data().toString();
+            if (col < ui->tableView->model()->columnCount() - 1)
+                out << ",";
+        }
+        out << "\n";
+    }
+
+    file.close();
+    QMessageBox::information(this, "Export Successful", "Data successfully exported to Excel (CSV).");
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    QStringList options = { "PDF (*.pdf)", "Excel (*.csv)" };
+    bool ok;
+
+    // Show the dialog to choose the format
+    QString choice = QInputDialog::getItem(this, "Export Format", "Choose export format:", options, 0, false, &ok);
+
+    if (ok && !choice.isEmpty()) {
+        // Based on the choice, call the corresponding export function
+        if (choice == "PDF (*.pdf)") {
+            exportToPDF();
+        } else if (choice == "Excel (*.csv)") {
+            exportToExcel();
+        }
     }
 }
 

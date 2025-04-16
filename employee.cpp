@@ -102,3 +102,7 @@ QString Employee::getPoste() const {
 void Employee::setPoste(const QString &poste) {
     m_poste = poste;
 }
+
+void Employee::AddEmployee(){
+
+}

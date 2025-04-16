@@ -36,7 +36,7 @@ public:
     void setPassword(const QString &password);
     void setDob(const QDate &dob);
     void setPoste(const QString &poste);
-
+    void AddEmployee();
 private:
     int m_id;
     QString m_nom;
