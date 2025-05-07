@@ -25,6 +25,14 @@
 #include <QFileDialog>
 #include <QPrinter>
 #include "connection.h"
+#include <QRegularExpression>
+#include <QSqlRecord>
+#include <QProcess>
+#include <QTimer>
+#include <QSerialPort>
+#include <QtMultimedia>
+#include <QMediaPlayer>
+#include <QAudio>
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -74,9 +82,19 @@ private slots:
 
     void exportToExcel();
 
+    void displayEtablissements();
+
+    void on_speakButton_clicked();
+
+    QByteArray generatePcmFromText(const QString& text);
+
 private:
     Ui::MainWindow *ui;
+    QSqlQueryModel* employeeModel = nullptr;
     int employeeId;
     bool isAscending;
+    QMediaPlayer *player;
+    QAudioOutput *audioOutput;
+    QSerialPort *serial;
 };
 #endif // MAINWINDOW_H

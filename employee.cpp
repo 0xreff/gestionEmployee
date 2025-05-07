@@ -1,108 +1,313 @@
 #include "employee.h"
+#include "connection.h"
+#include <QSqlQuery>
+#include <QSqlError>
+Employee::Employee(){};
+Employee::Employee(const QString &nom, const QString &prenom, const QByteArray &photo,
+                   const QString &tel, const QString &gender, const QString &email,
+                   const QString &password, const QDate &dob, const QString &poste, int id_etab)
+    : nom(nom), prenom(prenom), photo(photo), tel(tel), gender(gender),
+    email(email), password(password), dob(dob), poste(poste), id_etab(id_etab) {}
 
-// Default constructor
-Employee::Employee() : m_id(0), m_nom(""), m_prenom(""), m_photoPortrait(QByteArray()), m_tel(""),
-    m_gender(""), m_email(""), m_password(""), m_dob(QDate()), m_poste("") {}
+bool Employee::save(QString &errorMessage)
+{
+    QSqlQuery query;
+    query.prepare("INSERT INTO employees (nom, prenom, photo, tel, gender, email, password, dob, poste, id_etab) "
+                  "VALUES (:nom, :prenom, :photo, :tel, :gender, :email, :password, :dob, :poste, :id_etab)");
 
-// Parameterized constructor
-Employee::Employee(int id, const QString &nom, const QString &prenom, const QByteArray &photoPortrait,
-                   const QString &tel, const QString &gender, const QString &email, const QString &password,
-                   const QDate &dob, const QString &poste)
-    : m_id(id), m_nom(nom), m_prenom(prenom), m_photoPortrait(photoPortrait), m_tel(tel), m_gender(gender),
-    m_email(email), m_password(password), m_dob(dob), m_poste(poste) {}
+    query.bindValue(":nom", nom);
+    query.bindValue(":prenom", prenom);
+    query.bindValue(":photo", photo);
+    query.bindValue(":tel", tel);
+    query.bindValue(":gender", gender);
+    query.bindValue(":email", email);
+    query.bindValue(":password", password);
+    query.bindValue(":dob", dob);
+    query.bindValue(":poste", poste);
+    query.bindValue(":id_etab", id_etab);
 
-// Getter and Setter Methods
+    if (!query.exec()) {
+        errorMessage = query.lastError().text();
+        return false;
+    }
 
-// ID
-int Employee::getId() const {
-    return m_id;
+    return true;
 }
 
-void Employee::setId(int id) {
-    m_id = id;
+/*EEEEEEEEETTTTTTTTTTAAAAAAAAABBBBBBBLLLLLLLLLIIIIIIIIIIISSSSSSSSEEEEEEMMMMMMMMMEEEEEEENNNNNNNNTTTTTTT*/
+QMap<int, QString> Employee::fetchEtablissements(QString &errorMessage)
+{
+    QMap<int, QString> etablissements;
+
+    // Call the connection method to ensure the database is connected
+   connection conn;  // Make sure you instantiate the connection object
+    if (!conn.createconnect()) {
+        errorMessage = "Failed to establish a connection to the database.";
+        return etablissements;
+    }
+
+    // Create a query to fetch the list of établissements
+    QSqlQuery etabQuery;
+    etabQuery.prepare("SELECT id, adresse FROM ETABLISSEMENT");
+
+    if (!etabQuery.exec()) {
+        errorMessage = "Failed to retrieve établissements: " + etabQuery.lastError().text();
+        return etablissements;
+    }
+
+    // Process and store the results
+    while (etabQuery.next()) {
+        int id = etabQuery.value("id").toInt();
+        QString adresse = etabQuery.value("adresse").toString();
+        etablissements[id] = adresse;  // Store ID as key and name as value
+    }
+
+    return etablissements;
 }
 
-// Nom
-QString Employee::getNom() const {
-    return m_nom;
+QSqlQueryModel* Employee::displayEmployees(QObject* parent = nullptr)
+{
+    /*connection c;
+    if (!c.createconnect()) {
+        qDebug() << "Database connection failed.";
+        return nullptr;
+    }*/
+
+    QSqlQueryModel *model = new QSqlQueryModel(parent);
+    QSqlQuery query;
+
+    if (!query.exec("SELECT ID, NOM, PRENOM, TEL, GENDER, EMAIL, PASSWORD, DOB, POSTE, ID_ETAB FROM EMPLOYEES")) {
+        qDebug() << "Error displaying employees: " << query.lastError().text();
+        return nullptr;
+    }
+
+    model->setQuery(query);
+    return model;
 }
 
-void Employee::setNom(const QString &nom) {
-    m_nom = nom;
+
+
+
+QSqlQueryModel* Employee::search(const QString& searchText, const QString& searchCriteria)
+{
+    QSqlQueryModel *model = new QSqlQueryModel;
+
+    QString column;
+    if (searchCriteria == "ID") {
+        column = "ID";
+    } else if (searchCriteria == "Nom") {
+        column = "NOM";
+    } else if (searchCriteria == "Prenom") {
+        column = "PRENOM";
+    } else if (searchCriteria == "Email") {
+        column = "EMAIL";
+    } else if (searchCriteria == "Telephone") {
+        column = "TEL";
+    }
+
+    QString queryStr = QString("SELECT ID, NOM, PRENOM, TEL, GENDER, EMAIL, PASSWORD, DOB, POSTE, ID_ETAB FROM EMPLOYEES WHERE %1 LIKE :searchText").arg(column);
+    QSqlQuery query;
+    query.prepare(queryStr);
+    query.bindValue(":searchText", "%" + searchText + "%");
+
+    if (!query.exec()) {
+        qDebug() << "Error searching employees: " << query.lastError().text();
+        return nullptr;
+    }
+
+    model->setQuery(query);
+    return model;
 }
 
-// Prénom
-QString Employee::getPrenom() const {
-    return m_prenom;
+bool Employee::deleteEmployee(int id, QString &errorMessage)
+{
+    QSqlQuery query;
+    query.prepare("DELETE FROM EMPLOYEES WHERE ID = :id");
+
+    // Bind the ID to the query
+    query.bindValue(":id", id);
+
+    // Execute the query to delete the employee
+    if (query.exec()) {
+        return true;
+    } else {
+        errorMessage = "Failed to delete employee: " + query.lastError().text();
+        return false;
+    }
 }
 
-void Employee::setPrenom(const QString &prenom) {
-    m_prenom = prenom;
+QSqlQuery Employee::fetchEmployeeByIdOrEmail(const QString& searchBy, const QString& searchText)
+{
+    connection c;
+    if (!c.createconnect()) {
+        qDebug() << "Connection failed.";
+        return QSqlQuery();  // Empty query
+    }
+
+    QSqlQuery query;
+    if (searchBy == "ID") {
+        query.prepare("SELECT * FROM employees WHERE ID = :searchText");
+        query.bindValue(":searchText", searchText.toInt());
+    } else if (searchBy == "Email") {
+        query.prepare("SELECT * FROM employees WHERE EMAIL = :searchText");
+        query.bindValue(":searchText", searchText);
+    }
+
+    if (!query.exec()) {
+        qDebug() << "Query execution failed: " << query.lastError().text();
+    }
+
+    return query;
 }
 
-// Photo Portrait
-QByteArray Employee::getPhotoPortrait() const {
-    return m_photoPortrait;
+
+bool Employee::modifyEmployee(int id, const QString& nom, const QString& prenom, const QString& tel,
+                              const QString& email, const QString& password, const QString& gender,
+                              const QDate& dob, const QString& poste, const QByteArray& photoData,
+                              bool updatePhoto, QString& errorMessage)
+{
+    QString queryString = "UPDATE employees SET NOM = :nom, PRENOM = :prenom, TEL = :tel, EMAIL = :email, "
+                          "PASSWORD = :password, GENDER = :gender, DOB = :dob, POSTE = :poste";
+
+    if (updatePhoto) {
+        queryString += ", PHOTO = :photo";
+    }
+
+    queryString += " WHERE ID = :id";
+
+    QSqlQuery query;
+    query.prepare(queryString);
+    query.bindValue(":nom", nom);
+    query.bindValue(":prenom", prenom);
+    query.bindValue(":tel", tel);
+    query.bindValue(":email", email);
+    query.bindValue(":password", password);
+    query.bindValue(":gender", gender);
+    query.bindValue(":dob", dob);
+    query.bindValue(":poste", poste);
+    query.bindValue(":id", id);
+
+    if (updatePhoto) {
+        query.bindValue(":photo", photoData.isEmpty() ? QVariant(QVariant::ByteArray) : photoData);
+    }
+
+    if (!query.exec()) {
+        errorMessage = query.lastError().text();
+        return false;
+    }
+
+    return true;
 }
 
-void Employee::setPhotoPortrait(const QByteArray &photoPortrait) {
-    m_photoPortrait = photoPortrait;
+
+QSqlQueryModel* Employee::sortEmployees(const QString& sortBy, bool ascending)
+{
+    QString queryStr = "SELECT ID, NOM, PRENOM, TEL, EMAIL, PASSWORD, GENDER, DOB, POSTE FROM EMPLOYEES";
+
+    // Validate and append ORDER BY
+    QStringList validColumns = {"ID", "NOM", "PRENOM", "TEL", "EMAIL"};
+    if (validColumns.contains(sortBy.toUpper())) {
+        queryStr += " ORDER BY " + sortBy + (ascending ? " ASC" : " DESC");
+    }
+
+    QSqlQueryModel* model = new QSqlQueryModel();
+    model->setQuery(queryStr);
+
+    if (model->lastError().isValid()) {
+        qDebug() << "Error sorting employees:" << model->lastError().text();
+        delete model;
+        return nullptr;
+    }
+
+    return model;
 }
 
-// Telephone
-QString Employee::getTel() const {
-    return m_tel;
+
+int Employee::getCountFromQuery(const QString &queryStr)
+{
+    QSqlQuery query;
+    if (query.exec(queryStr) && query.next()) {
+        return query.value(0).toInt();
+    }
+    return 0;
+}
+int Employee::countTotalEmployees() {
+    return getCountFromQuery("SELECT COUNT(*) FROM employees");
 }
 
-void Employee::setTel(const QString &tel) {
-    m_tel = tel;
+int Employee::countByGender(const QString &gender) {
+    QSqlQuery query;
+    query.prepare("SELECT COUNT(*) FROM employees WHERE gender = :gender");
+    query.bindValue(":gender", gender);
+    if (query.exec() && query.next()) {
+        return query.value(0).toInt();
+    }
+    return 0;
 }
 
-// Gender
-QString Employee::getGender() const {
-    return m_gender;
+int Employee::countByPoste(const QString &poste) {
+    QSqlQuery query;
+    query.prepare("SELECT COUNT(*) FROM employees WHERE poste = :poste");
+    query.bindValue(":poste", poste);
+    if (query.exec() && query.next()) {
+        return query.value(0).toInt();
+    }
+    return 0;
 }
 
-void Employee::setGender(const QString &gender) {
-    m_gender = gender;
+int Employee::countNoPhoto() {
+    return getCountFromQuery("SELECT COUNT(*) FROM employees WHERE photo IS NULL OR photo = ''");
+}
+int Employee::countPhonePrefix(const QString &prefix) {
+    QSqlQuery query;
+    query.prepare("SELECT COUNT(*) FROM employees WHERE tel LIKE :prefix");
+    query.bindValue(":prefix", prefix + "%");
+    if (query.exec() && query.next()) {
+        return query.value(0).toInt();
+    }
+    return 0;
 }
 
-// Email
-QString Employee::getEmail() const {
-    return m_email;
+int Employee::countPhoneOtherPrefixes() {
+    QSqlQuery query;
+    QString sql = R"(
+        SELECT COUNT(*) FROM employees
+        WHERE tel NOT LIKE '2%' AND tel NOT LIKE '5%' AND tel NOT LIKE '9%'
+    )";
+    if (query.exec(sql) && query.next()) {
+        return query.value(0).toInt();
+    }
+    return 0;
 }
 
-void Employee::setEmail(const QString &email) {
-    m_email = email;
+bool Employee::validateCredentials(const QString &email, const QString &password)
+{
+    QSqlQuery query;
+    query.prepare("SELECT * FROM employees WHERE EMAIL = :email AND PASSWORD = :password");
+    query.bindValue(":email", email);
+    query.bindValue(":password", password); // You can hash it here if needed
+
+    if (query.exec()) {
+        return query.next(); // true if found
+    } else {
+        qDebug() << "Login query failed:" << query.lastError().text();
+        return false;
+    }
 }
+bool Employee::emailExists(const QString& email) {
+    QSqlQuery query;
+    query.prepare("SELECT COUNT(*) FROM employees WHERE email = :email");
+    query.bindValue(":email", email);
 
-// Password
-QString Employee::getPassword() const {
-    return m_password;
-}
+    if (!query.exec()) {
+        qDebug() << "Query failed:" << query.lastError().text();
+        return false;
+    }
 
-void Employee::setPassword(const QString &password) {
-    m_password = password;
-}
+    if (query.next()) {
+        int count = query.value(0).toInt();
+        return count > 0;
+    }
 
-// Date of Birth (Dob)
-QDate Employee::getDob() const {
-    return m_dob;
-}
-
-void Employee::setDob(const QDate &dob) {
-    m_dob = dob;
-}
-
-// Poste
-QString Employee::getPoste() const {
-    return m_poste;
-}
-
-void Employee::setPoste(const QString &poste) {
-    m_poste = poste;
-}
-
-void Employee::AddEmployee(){
-
+    return false;
 }

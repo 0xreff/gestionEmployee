@@ -2,52 +2,49 @@
 #define EMPLOYEE_H
 
 #include <QString>
-#include <QByteArray>
 #include <QDate>
-
-class Employee {
+#include <QByteArray>
+#include <QSqlQueryModel>
+#include <QMessageBox>
+class Employee
+{
 public:
-    // Constructor
+    Employee(const QString &nom, const QString &prenom, const QByteArray &photo,
+             const QString &tel, const QString &gender, const QString &email,
+             const QString &password, const QDate &dob, const QString &poste, int id_etab);
     Employee();
-    Employee(int id, const QString &nom, const QString &prenom, const QByteArray &photoPortrait,
-             const QString &tel, const QString &gender, const QString &email, const QString &password,
-             const QDate &dob, const QString &poste);
+    bool save(QString &errorMessage);
+    static QMap<int, QString> fetchEtablissements(QString &errorMessage);
+    static QSqlQueryModel* displayEmployees(QObject* parent);
+    static QSqlQueryModel* search(const QString& searchText, const QString& searchCriteria);
+    static bool deleteEmployee(int id, QString &errorMessage);
+    static QSqlQuery fetchEmployeeByIdOrEmail(const QString& searchBy, const QString& searchText);
+    static bool modifyEmployee(int id, const QString& nom, const QString& prenom, const QString& tel,
+                               const QString& email, const QString& password, const QString& gender,
+                               const QDate& dob, const QString& poste, const QByteArray& photoData,
+                               bool updatePhoto, QString& errorMessage);
+    static QSqlQueryModel* sortEmployees(const QString& sortBy, bool ascending);
+    static int getCountFromQuery(const QString &queryStr);
+    static int countTotalEmployees();
+    static int countByGender(const QString &gender);
+    static int countByPoste(const QString &poste);
+    static int countNoPhoto();
+    static int countPhonePrefix(const QString &prefix);
+    static int countPhoneOtherPrefixes();
+    static bool validateCredentials(const QString &email, const QString &password);
+    bool emailExists(const QString& email);
 
-    // Getters
-    int getId() const;
-    QString getNom() const;
-    QString getPrenom() const;
-    QByteArray getPhotoPortrait() const;
-    QString getTel() const;
-    QString getGender() const;
-    QString getEmail() const;
-    QString getPassword() const;
-    QDate getDob() const;
-    QString getPoste() const;
-
-    // Setters
-    void setId(int id);
-    void setNom(const QString &nom);
-    void setPrenom(const QString &prenom);
-    void setPhotoPortrait(const QByteArray &photoPortrait);
-    void setTel(const QString &tel);
-    void setGender(const QString &gender);
-    void setEmail(const QString &email);
-    void setPassword(const QString &password);
-    void setDob(const QDate &dob);
-    void setPoste(const QString &poste);
-    void AddEmployee();
 private:
-    int m_id;
-    QString m_nom;
-    QString m_prenom;
-    QByteArray m_photoPortrait; // Image data in binary
-    QString m_tel;
-    QString m_gender;
-    QString m_email;
-    QString m_password;
-    QDate m_dob;
-    QString m_poste;
+    QString nom;
+    QString prenom;
+    QByteArray photo;
+    QString tel;
+    QString gender;
+    QString email;
+    QString password;
+    QDate dob;
+    QString poste;
+    int id_etab;
 };
 
 #endif // EMPLOYEE_H

@@ -1,25 +1,66 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QRegularExpression>
+#include "employee.h"
+#include "Speech.h"
+#include "QAudioOutput"
+#include <QSerialPortInfo>
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    displayEtablissements();
+    updateStatistics();
     connect(ui->Actualiser, &QPushButton::clicked, this, &MainWindow::on_Actualiser_clicked);
     connect(ui->tableView, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(on_tableView_doubleClicked(QModelIndex)));
     connect(ui->update_btn, &QPushButton::clicked, this, &MainWindow::on_update_btn_clicked);
     connect(ui->updated_btn, &QPushButton::clicked, this, &MainWindow::on_updated_btn_clicked);
     connect(ui->upload_btn, &QPushButton::clicked, this, &MainWindow::on_upload_btn_clicked);
     connect(ui->delete_btn, &QPushButton::clicked, this, &MainWindow::on_delete_btn_clicked);
-
     isAscending = true;
+    serial = new QSerialPort(this);
+    serial->setPortName("COM4");
+    serial->setBaudRate(QSerialPort::Baud9600);
+    serial->setDataBits(QSerialPort::Data8);
+    serial->setParity(QSerialPort::NoParity);
+    serial->setStopBits(QSerialPort::OneStop);
+    serial->setFlowControl(QSerialPort::NoFlowControl);
+
+    if (!serial->open(QIODevice::WriteOnly)) {
+        qDebug() << "Failed to open serial port:" << serial->errorString();
+    } else {
+        qDebug() << "Serial port opened successfully.";
+    }
+
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
 }
+
+void MainWindow::displayEtablissements()
+{
+    QString errorMessage;
+    Employee emp;
+    QMap<int, QString> etablissements = emp.fetchEtablissements(errorMessage);  // Fetch établissements
+
+    if (!etablissements.isEmpty()) {
+        ui->etab->clear();
+        QMapIterator<int, QString> i(etablissements);
+        while (i.hasNext()) {
+            i.next();
+            ui->etab->addItem(i.value(), i.key());
+        }
+    } else {
+        QMessageBox::critical(this, "Error", errorMessage);
+    }
+}
+
+
+
+
+
 
 void MainWindow::on_Ajouter_clicked()
 {
@@ -31,106 +72,79 @@ void MainWindow::on_Ajouter_clicked()
     QString gender = ui->Gender->currentText();
     QString poste = ui->Poste->currentText();
     QDate dob = ui->Dob->date();
+    int id_etab = ui->etab->currentData().toInt();
+
+    // Basic input validations as before...
     if (nom.isEmpty() || prenom.isEmpty() || tel.isEmpty() || email.isEmpty()) {
         QMessageBox::warning(this, "Input Error", "Please fill in all required fields.");
         return;
     }
+
     QRegularExpression telRegex("^\\d{8}$");
-    QRegularExpressionMatch telMatch = telRegex.match(tel);
-    if (!telMatch.hasMatch()) {
-        QMessageBox::critical(this, "Invalid Input", "must contain exactly 8 digits.");
+    if (!telRegex.match(tel).hasMatch()) {
+        QMessageBox::critical(this, "Invalid Input", "Phone must contain exactly 8 digits.");
         return;
     }
 
-    // 2. Validate email - must contain @ and a valid domain
     QRegularExpression emailRegex("^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$");
-    QRegularExpressionMatch emailMatch = emailRegex.match(email);
-    if (!emailMatch.hasMatch()) {
-        QMessageBox::critical(this, "Invalid Input", "The email address is not valid.");
+    if (!emailRegex.match(email).hasMatch()) {
+        QMessageBox::critical(this, "Invalid Input", "Invalid email address.");
         return;
     }
 
-    // 3. Validate password - must have at least 6 characters, with both uppercase and lowercase letters
     QRegularExpression passwordRegex("^(?=.*[a-z])(?=.*[A-Z]).{6,}$");
-    QRegularExpressionMatch passwordMatch = passwordRegex.match(password);
-    if (!passwordMatch.hasMatch()) {
-        QMessageBox::critical(this, "Invalid Input", "verifiy Password Majuscile w Miniscule");
+    if (!passwordRegex.match(password).hasMatch()) {
+        QMessageBox::critical(this, "Invalid Input", "Password must have uppercase and lowercase letters and be at least 6 characters.");
         return;
     }
+
+    if (ui->etab->currentIndex() == -1) {
+        QMessageBox::warning(this, "Input Error", "Please select an établissement.");
+        return;
+    }
+
     QDate currentDate = QDate::currentDate();
-
     int age = currentDate.year() - dob.year();
-
-    if (currentDate.month() < dob.month() || (currentDate.month() == dob.month() && currentDate.day() < dob.day())) {
-        age--;  // The person hasn't had their birthday yet this year, so subtract one year
-    }
-
-    if (age < 18) {
-        QMessageBox::critical(this, "Invalid Input", "The person must be at least 18 years old.");
-        return;
-    }
-    if (age > 100) {
-        QMessageBox::critical(this, "Invalid Input", "Ohh ! \nis This person Died 🤨!\nPlease enter a valid Age.");
+    if (currentDate.month() < dob.month() || (currentDate.month() == dob.month() && currentDate.day() < dob.day()))
+        age--;
+    if (age < 16 || age > 100) {
+        QMessageBox::critical(this, "Invalid Age", "Age must be between 16 and 100.");
         return;
     }
 
+    // Photo
     QString imagePath = ui->Photo->text();
     QFile imageFile(imagePath);
     QByteArray photoData;
     if (imageFile.open(QIODevice::ReadOnly)) {
         photoData = imageFile.readAll();
     }
-    //***********************************************************************************************************
-    QSqlQuery query;
-    query.prepare("INSERT INTO employees (nom, prenom, photo, tel, gender, email, password, dob, poste) "
-                  "VALUES (:nom, :prenom, :photo, :tel, :gender, :email, :password, :dob, :poste)");
 
-    // Bind values to the query
-    query.bindValue(":nom", nom);
-    query.bindValue(":prenom", prenom);
-    query.bindValue(":photo", photoData);  // Store the image as binary (BLOB)
-    query.bindValue(":tel", tel);
-    query.bindValue(":gender", gender);
-    query.bindValue(":email", email);
-    query.bindValue(":password", password);
-    query.bindValue(":dob", dob);
-    query.bindValue(":poste", poste);
-
-    // Execute the query
-    if (query.exec()) {
+    Employee emp(nom, prenom, photoData, tel, gender, email, password, dob, poste, id_etab);
+    QString error;
+    if (emp.save(error)) {
         QMessageBox::information(this, "Success", "Employee created successfully.");
     } else {
-        QMessageBox::critical(this, "Error", "Failed to create employee: " + query.lastError().text());
+        QMessageBox::critical(this, "Database Error", "Failed to create employee: " + error);
     }
 }
 
-void MainWindow::displayEmployees()
+void MainWindow::on_Actualiser_clicked()
 {
-    QSqlQuery query;
-    query.prepare("SELECT ID, NOM, PRENOM, TEL, GENDER, EMAIL, PASSWORD, DOB, POSTE FROM EMPLOYEES");
-
-    if (!query.exec()) {
-        QMessageBox::critical(this, "Error", "Failed to retrieve data: " + query.lastError().text());
-        return;
+    updateStatistics();
+    if (employeeModel) {
+        delete employeeModel;
+        employeeModel = nullptr;
     }
 
-    QSqlQueryModel *model = new QSqlQueryModel();
-    model->setQuery(query);
-
-    model->setHeaderData(0, Qt::Horizontal, "ID");
-    model->setHeaderData(1, Qt::Horizontal, "Nom");
-    model->setHeaderData(2, Qt::Horizontal, "Prenom");
-    model->setHeaderData(3, Qt::Horizontal, "Tel");
-    model->setHeaderData(4, Qt::Horizontal, "Gender");
-    model->setHeaderData(5, Qt::Horizontal, "Email");
-    model->setHeaderData(6, Qt::Horizontal, "Password");
-    model->setHeaderData(7, Qt::Horizontal, "Date of Birth");
-    model->setHeaderData(8, Qt::Horizontal, "Poste");
-
-    ui->tableView->setModel(model);
-    ui->tableView->resizeColumnsToContents();
+    employeeModel = Employee::displayEmployees(this);
+    if (employeeModel != nullptr) {
+        ui->tableView->setModel(employeeModel);
+        ui->tableView->resizeColumnsToContents();
+    } else {
+        QMessageBox::critical(this, "Error", "Failed to retrieve employee data.");
+    }
 }
-
 
 
 void MainWindow::on_Reset_clicked()
@@ -140,17 +154,10 @@ void MainWindow::on_Reset_clicked()
     ui->Tel->clear();
     ui->Email->clear();
     ui->Pass->clear();
-    ui->Photo->clear();  // Reset photo QLineEdit
-    ui->Gender->setCurrentIndex(0);  // Reset to the first item (if applicable)
-    ui->Dob->setDate(QDate::currentDate());  // Reset to current date
+    ui->Photo->clear();
+    ui->Gender->setCurrentIndex(0);
     ui->Poste->setCurrentIndex(0);
-}
-
-
-void MainWindow::on_Actualiser_clicked()
-{
-    displayEmployees();
-    updateStatistics();
+    ui->etab->setCurrentIndex(0);
 }
 
 void MainWindow::on_tableView_doubleClicked(const QModelIndex &index)
@@ -167,11 +174,10 @@ void MainWindow::on_tableView_doubleClicked(const QModelIndex &index)
     query.bindValue(":id", employeeId);
 
     if (query.exec() && query.next()) {
-        QByteArray photoData = query.value(2).toByteArray();  // Retrieve the photo data
-        QString nom = query.value(0).toString();  // Retrieve the employee's last name
-        QString prenom = query.value(1).toString();  // Retrieve the employee's first name
+        QByteArray photoData = query.value(2).toByteArray();
+        QString nom = query.value(0).toString();
+        QString prenom = query.value(1).toString();
 
-        // Debug: Check the size of the photo data
         qDebug() << "Photo data size:" << photoData.size();
 
         // Combine first and last names to create a full name
@@ -215,84 +221,30 @@ void MainWindow::on_tableView_doubleClicked(const QModelIndex &index)
 
 void MainWindow::on_search_btn_clicked()
 {
-    // Get the search text from the line edit
     QString searchText = ui->search_line->text();
 
-    // Get the selected search criteria from the combo box
+    // Get the selected search criteria from the QComboBox
     QString searchCriteria = ui->comboBox->currentText();
 
-    // Determine the corresponding column for the search
-    QString columnName;
-    QString searchColumn;
-    QString matchCondition;
-
-    // Handle the case of each column:
-    if (searchCriteria == "Nom") {
-        columnName = "NOM";
-        searchColumn = "LOWER(NOM)";
-        matchCondition = "LIKE";
-    } else if (searchCriteria == "Prenom") {
-        columnName = "PRENOM";
-        searchColumn = "LOWER(PRENOM)";
-        matchCondition = "LIKE";
-    } else if (searchCriteria == "Telephone") {
-        columnName = "TEL";
-        searchColumn = "TEL";
-        matchCondition = "LIKE";  // Allow partial matches
-    } else if (searchCriteria == "Email") {
-        columnName = "EMAIL";
-        searchColumn = "LOWER(EMAIL)";
-        matchCondition = "LIKE";
-    } else if (searchCriteria == "ID") {
-        columnName = "ID";
-        searchColumn = "ID";
-        matchCondition = "=";  // Exact match for ID
-    }
-
-    // If the search text is empty, return all employees
+    // If search text is empty, just show all employees
     if (searchText.isEmpty()) {
-        displayEmployees(); // Refresh to display all employees
+        on_Actualiser_clicked();  // Refresh to show all employees
         return;
     }
 
-    // Convert the search text to lowercase for case-insensitive search (if it's not ID)
-    if (searchCriteria != "ID") {
-        searchText = searchText.toLower();  // Convert the search text to lowercase
-    }
+    // Call the search method from Employee class
+    QSqlQueryModel *model = Employee::search(searchText, searchCriteria);
 
-    // Prepare the query based on the search criteria and text
-    QSqlQuery query;
-
-    // If searching by ID, we use an exact match (`=`) instead of LIKE
-    if (searchCriteria == "ID") {
-        QString queryStr = "SELECT * FROM EMPLOYEES WHERE " + searchColumn + " = :searchText";
-        query.prepare(queryStr);
-        query.bindValue(":searchText", searchText.toInt());  // Bind as integer for exact match
-        qDebug() << "Executing query for ID: " << queryStr;
+    if (model != nullptr) {
+        ui->tableView->setModel(model);  // Set the model to the QTableView
     } else {
-        QString queryStr = "SELECT * FROM EMPLOYEES WHERE " + searchColumn + " " + matchCondition + " :searchText";
-        query.prepare(queryStr);
-        query.bindValue(":searchText", "%" + searchText + "%");  // Use % for partial matches
-        qDebug() << "Executing query: " << queryStr;
-    }
-
-    // Execute the query
-    if (query.exec()) {
-        // Create a model to display the results in the table view
-        QSqlQueryModel *model = new QSqlQueryModel;
-        model->setQuery(query);
-
-        // Set the model for the QTableView
-        ui->tableView->setModel(model);
-    } else {
-        // If the query fails, show an error message
-        QMessageBox::critical(this, "Error", "Failed to execute search query: " + query.lastError().text());
+        QMessageBox::critical(this, "Error", "Failed to execute search query.");
     }
 }
 
+
 void MainWindow::on_update_btn_clicked()
 {
-    // Handle the search as described earlier
     QString searchText = ui->searchLineEdit->text();
     QString searchBy = ui->searchComboBox->currentText();
 
@@ -300,40 +252,25 @@ void MainWindow::on_update_btn_clicked()
         QMessageBox::warning(this, "Input Error", "Please enter a search term.");
         return;
     }
+    Employee emp;
+    QSqlQuery query = emp.fetchEmployeeByIdOrEmail(searchBy, searchText);
 
-    QSqlQuery query;
-    if (searchBy == "ID") {
-        query.prepare("SELECT * FROM employees WHERE ID = :searchText");
-        query.bindValue(":searchText", searchText.toInt());  // ID is assumed to be an integer
-    } else if (searchBy == "Email") {
-        query.prepare("SELECT * FROM employees WHERE EMAIL = :searchText");
-        query.bindValue(":searchText", searchText);
-    }
+    if (query.next()) {
+        ui->Nomu->setText(query.value("NOM").toString());
+        ui->Prenomu->setText(query.value("PRENOM").toString());
+        ui->Telu->setText(query.value("TEL").toString());
+        ui->Emailu->setText(query.value("EMAIL").toString());
+        ui->Passu->setText(query.value("PASSWORD").toString());
+        ui->Genderu->setCurrentText(query.value("GENDER").toString());
+        ui->Dobu->setDate(query.value("DOB").toDate());
+        ui->Posteu->setCurrentText(query.value("POSTE").toString());
 
-    if (query.exec()) {
-        if (query.next()) {
-            // Retrieve data and populate the fields
-            ui->Nomu->setText(query.value("NOM").toString());
-            ui->Prenomu->setText(query.value("PRENOM").toString());
-            ui->Telu->setText(query.value("TEL").toString());
-            ui->Emailu->setText(query.value("EMAIL").toString());
-            ui->Passu->setText(query.value("PASSWORD").toString());
-            ui->Genderu->setCurrentText(query.value("GENDER").toString());
-            ui->Dobu->setDate(query.value("DOB").toDate());
-            ui->Posteu->setCurrentText(query.value("POSTE").toString());
-
-            // Store the employee ID to use in the update
-            employeeId = query.value("ID").toInt(); // Store the ID for later use in update
-            ui->Modifier->show();
-        } else {
-            QMessageBox::warning(this, "Not Found", "No employee found with the provided ID or Email.");
-        }
+        employeeId = query.value("ID").toInt();
+        ui->Modifier->show();
     } else {
-        QMessageBox::critical(this, "Database Error", query.lastError().text());
+        QMessageBox::warning(this, "Not Found", "No employee found with the provided ID or Email.");
     }
 }
-
-
 
 void MainWindow::on_updated_btn_clicked()
 {
@@ -390,6 +327,11 @@ void MainWindow::on_updated_btn_clicked()
         return;
     }
 
+    if (employeeId == -1) {
+        QMessageBox::critical(this, "Error", "No employee selected for update.");
+        return;
+    }
+
     QByteArray photoData;
     bool updatePhoto = false;
 
@@ -411,33 +353,16 @@ void MainWindow::on_updated_btn_clicked()
         }
     }
 
-    QString queryString = "UPDATE employees SET NOM = :nom, PRENOM = :prenom, TEL = :tel, EMAIL = :email, "
-                          "PASSWORD = :password, GENDER = :gender, DOB = :dob, POSTE = :poste";
+    QString errorMessage;
+    Employee emp;
+    qDebug() << "Updating employee with ID:" << employeeId;
+    bool success = emp.modifyEmployee(employeeId, nom, prenom, tel, email, password,
+                                      gender, dob, poste, photoData, updatePhoto, errorMessage);
 
-    if (updatePhoto) {
-        queryString += ", PHOTO = :photo";
-    }
-
-    queryString += " WHERE ID = :id";
-
-    QSqlQuery query;
-    query.prepare(queryString);
-    query.bindValue(":nom", nom);
-    query.bindValue(":prenom", prenom);
-    query.bindValue(":tel", tel);
-    query.bindValue(":email", email);
-    query.bindValue(":password", password);
-    query.bindValue(":gender", gender);
-    query.bindValue(":dob", dob);
-    query.bindValue(":poste", poste);
-    query.bindValue(":id", employeeId);
-
-    if (updatePhoto) {
-        query.bindValue(":photo", photoData.isEmpty() ? QVariant(QVariant::ByteArray) : photoData);
-    }
-
-    if (query.exec()) {
+    if (success) {
         QMessageBox::information(this, "Success", "Employee data updated successfully.");
+
+        // Clear UI fields
         ui->Nomu->clear();
         ui->Prenomu->clear();
         ui->Telu->clear();
@@ -447,52 +372,48 @@ void MainWindow::on_updated_btn_clicked()
         ui->Genderu->setCurrentIndex(0);
         ui->Dobu->setDate(QDate::currentDate());
         ui->Posteu->setCurrentIndex(0);
+
+        employeeId = -1; // Reset after update
+
+        // Refresh table
+        QSqlQueryModel *newModel = Employee::displayEmployees(this);
+        if (newModel) {
+            ui->tableView->setModel(newModel);
+            ui->tableView->resizeColumnsToContents();
+        } else {
+            QMessageBox::warning(this, "Warning", "Could not refresh the employee table.");
+        }
+
     } else {
-        QMessageBox::critical(this, "Error", "Failed to update employee: " + query.lastError().text());
+        QMessageBox::critical(this, "Error", "Failed to update employee: " + errorMessage);
     }
 }
+
 
 
 void MainWindow::on_trier_clicked()
 {
-    // Get the selected column from the comboBox
     QString sortBy = ui->comboBox->currentText();
-    int columnIndex = -1;
+    QString dbColumn;
 
-    // Map the selection to the corresponding column index
-    if (sortBy == "ID") {
-        columnIndex = 0;  // ID column
-    } else if (sortBy == "Nom") {
-        columnIndex = 1;  // Nom column
-    } else if (sortBy == "Prenom") {
-        columnIndex = 2;  // Prenom column
-    } else if (sortBy == "Telephone") {
-        columnIndex = 3;  // Telephone column
-    } else if (sortBy == "Email") {
-        columnIndex = 4;  // Email column
-    }
+    if (sortBy == "ID") dbColumn = "ID";
+    else if (sortBy == "Nom") dbColumn = "NOM";
+    else if (sortBy == "Prenom") dbColumn = "PRENOM";
+    else if (sortBy == "Telephone") dbColumn = "TEL";
+    else if (sortBy == "Email") dbColumn = "EMAIL";
+    else return;
 
-    // Ensure the column index is valid
-    if (columnIndex == -1) {
-        return;  // Invalid column, return early
-    }
-
-    // Check if we have a model set to the QTableView
-    QSqlQueryModel *model = qobject_cast<QSqlQueryModel *>(ui->tableView->model());
-    if (!model) {
-        return; // No model found, return
-    }
-
-    // Toggle sorting order (ascending/descending)
-    if (isAscending) {
-        model->sort(columnIndex, Qt::AscendingOrder);  // Ascending order
+    Employee emp;
+    QSqlQueryModel* model = emp.sortEmployees(dbColumn, isAscending);
+    if (model) {
+        ui->tableView->setModel(model);
+        ui->tableView->resizeColumnsToContents();
+        isAscending = !isAscending;
     } else {
-        model->sort(columnIndex, Qt::DescendingOrder); // Descending order
+        QMessageBox::critical(this, "Error", "Failed to sort employees.");
     }
-
-    // Toggle the sorting order for the next click
-    isAscending = !isAscending;
 }
+
 
 void MainWindow::on_upload_btn_clicked()
 {
@@ -542,69 +463,49 @@ void MainWindow::on_select_clicked()
 
 }
 
-#include <QSqlRecord>  // Add this line at the top of the file
-
 void MainWindow::on_delete_btn_clicked()
 {
-    // Get the selected index in the table view
     QModelIndexList selectedIndexes = ui->tableView->selectionModel()->selectedRows();
 
-    // Check if any row is selected
     if (selectedIndexes.isEmpty()) {
         QMessageBox::warning(this, "No selection", "Please select a row to delete.");
         return;
     }
 
-    // Get the row index of the selected item (we assume it's the first selected row)
     int row = selectedIndexes.first().row();
-
-    // Retrieve data from the selected row
     QSqlQueryModel *model = qobject_cast<QSqlQueryModel*>(ui->tableView->model());
-    QString nom = model->data(model->index(row, 1)).toString();  // Get the 'Nom' from column 1
-    QString prenom = model->data(model->index(row, 2)).toString();  // Get the 'Prenom' from column 2
-    QString tel = model->data(model->index(row, 3)).toString();  // Get the 'Tel' from column 3
-    QString email = model->data(model->index(row, 5)).toString();  // Get the 'Email' from column 5
-    QString gender = model->data(model->index(row, 4)).toString();  // Get the 'Gender' from column 4
-    QString poste = model->data(model->index(row, 8)).toString();  // Get the 'Poste' from column 8
 
-    // Create a message showing all the data (excluding photo)
-    QString message = QString("Are you sure you want to delete:\n\n"
-                              "Nom: %1\n-----\nPrenom: %2\n-----\nTel: %3\n-----\nEmail: %4\n-----\nGender: %5\n-----\nPoste: %6")
-                          .arg(nom)
-                          .arg(prenom)
-                          .arg(tel)
-                          .arg(email)
-                          .arg(gender)
-                          .arg(poste);
+    // Store ID before deletion
+    int id = model->data(model->index(row, 0)).toInt();
 
-    // Show a confirmation dialog
-    QMessageBox::StandardButton reply;
-    reply = QMessageBox::question(this, "Confirm Deletion", message, QMessageBox::Yes | QMessageBox::No);
+    // Confirm deletion
+    QString nom = model->data(model->index(row, 1)).toString();
+    QString prenom = model->data(model->index(row, 2)).toString();
+
+    QString message = QString("Delete employee?\n\nNom: %1\nPrenom: %2").arg(nom, prenom);
+    QMessageBox::StandardButton reply = QMessageBox::question(this, "Confirm Deletion", message);
 
     if (reply == QMessageBox::Yes) {
-        // Create a query to delete the selected employee
-        QSqlQuery query;
-        query.prepare("DELETE FROM EMPLOYEES WHERE ID = :id");
+        QString errorMessage;
+        Employee e;
 
-        // Get the ID of the selected employee
-        int id = model->data(model->index(row, 0)).toInt();  // Get the 'ID' from column 0
+        if (e.deleteEmployee(id, errorMessage)) {
+            QMessageBox::information(this, "Success", "Employee deleted.");
 
-        // Bind the ID to the query
-        query.bindValue(":id", id);
-
-        // Execute the query to delete the employee
-        if (query.exec()) {
-            QMessageBox::information(this, "Success", "Employee deleted successfully.");
+            QSqlQueryModel *newModel = Employee::displayEmployees(this);
+            if (newModel) {
+                ui->tableView->setModel(newModel);
+                ui->tableView->resizeColumnsToContents();
+            }
         } else {
-            QMessageBox::critical(this, "Error", "Failed to delete employee: " + query.lastError().text());
+            QMessageBox::critical(this, "Error", errorMessage);
         }
-
-        // Refresh the table after deletion
-        displayEmployees();
     }
 }
 
-int MainWindow::getCountFromQuery(const QString &queryStr)
+
+
+/*int MainWindow::getCountFromQuery(const QString &queryStr)
 {
     QSqlQuery query;
     if (query.exec(queryStr)) {
@@ -615,23 +516,34 @@ int MainWindow::getCountFromQuery(const QString &queryStr)
         qDebug() << "Query failed:" << query.lastError().text();
     }
     return 0;
-}
+}*/
 
 void MainWindow::updateStatistics()
 {
-    ui->label_total->setText(QString::number(getCountFromQuery("SELECT COUNT(*) FROM employees")));
-    ui->label_men->setText(QString::number(getCountFromQuery("SELECT COUNT(*) FROM employees WHERE gender = 'Homme'")));
-    ui->label_women->setText(QString::number(getCountFromQuery("SELECT COUNT(*) FROM employees WHERE gender = 'Femme'")));
-    ui->label_admin->setText(QString::number(getCountFromQuery("SELECT COUNT(*) FROM employees WHERE poste = 'Admin'")));
-    ui->label_transporteurs->setText(QString::number(getCountFromQuery("SELECT COUNT(*) FROM employees WHERE poste = 'Transporteur'")));
-    ui->label_employees->setText(QString::number(getCountFromQuery("SELECT COUNT(*) FROM employees WHERE poste = 'Employee'")));
-    ui->label_etudiants->setText(QString::number(getCountFromQuery("SELECT COUNT(*) FROM employees WHERE poste = 'Etudiant'")));
-    ui->label_no_photo->setText(QString::number(getCountFromQuery("SELECT COUNT(*) FROM employees WHERE photo IS NULL OR photo = ''")));
+    QSize targetSize(50, 50); // Adjust to your preferred size
 
+    QPixmap pix1("C:/Users/Asser/Desktop/examHub/resource/ooredoo.png");
+    QPixmap pix2("C:/Users/Asser/Desktop/examHub/resource/orange.png");
+    QPixmap pix3("C:/Users/Asser/Desktop/examHub/resource/tt.png");
+    ui->Poo->setPixmap(pix1.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    ui->Por->setPixmap(pix2.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    ui->Ptt->setPixmap(pix3.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 
-    int total = getCountFromQuery("SELECT COUNT(*) FROM employees");
-    int men = getCountFromQuery("SELECT COUNT(*) FROM employees WHERE gender = 'Homme'");
-    int women = getCountFromQuery("SELECT COUNT(*) FROM employees WHERE gender = 'Femme'");
+    ui->label_total->setText(QString::number(Employee::countTotalEmployees()));
+    ui->label_men->setText(QString::number(Employee::countByGender("Homme")));
+    ui->label_women->setText(QString::number(Employee::countByGender("Femme")));
+    ui->label_admin->setText(QString::number(Employee::countByPoste("Admin")));
+    ui->label_transporteurs->setText(QString::number(Employee::countByPoste("Transporteur")));
+    ui->label_employees->setText(QString::number(Employee::countByPoste("Employee")));
+    ui->label_etudiants->setText(QString::number(Employee::countByPoste("Etudiant")));
+    ui->label_no_photo->setText(QString::number(Employee::countNoPhoto()));
+    ui->Oo->setText(QString::number(Employee::countPhonePrefix("2")));
+    ui->Or->setText(QString::number(Employee::countPhonePrefix("5")));
+    ui->Tt->setText(QString::number(Employee::countPhonePrefix("9")));
+    ui->Au->setText(QString::number(Employee::countPhoneOtherPrefixes()));
+    int total = Employee::countTotalEmployees();
+    int men = Employee::countByGender("Homme");
+    int women = Employee::countByGender("Femme");
 
     double menPercent = 0.0, womenPercent = 0.0;
     if (total > 0) {
@@ -639,10 +551,11 @@ void MainWindow::updateStatistics()
         womenPercent = (women * 100.0) / total;
     }
 
-
     ui->label_men_percent->setText(QString::number(menPercent, 'f', 1) + "%");
     ui->label_women_percent->setText(QString::number(womenPercent, 'f', 1) + "%");
 }
+
+
 
 void MainWindow::exportToPDF()
 {
@@ -736,4 +649,16 @@ void MainWindow::on_pushButton_clicked()
         }
     }
 }
+
+
+void MainWindow::on_speakButton_clicked()
+{
+    QString message = ui->idLineEdit->text(); // or however you get input
+
+}
+
+
+
+
+
 

@@ -1,23 +1,24 @@
 #include "connection.h"
 
-connection::connection()
-{
-
-}
+connection::connection() {}
 
 bool connection::createconnect()
-{bool test=false;
+{
+    qDebug() << "Attempting database connection...";
     QSqlDatabase db = QSqlDatabase::addDatabase("QODBC");
-    db.setDatabaseName("examHub");//inserer le nom de la source de données
-    db.setUserName("sensei");//inserer nom de l'utilisateur
-    db.setPassword("sensei");//inserer mot de passe de cet utilisateur
+    db.setDatabaseName("examHub");
+    db.setUserName("sensei");
+    db.setPassword("sensei");
 
-    if (db.open())
-        test=true;
+    bool success = db.open();
+    qDebug() << "Connection result:" << success << ", Error:" << db.lastError().text();
+    return success;
+}
 
-
-
-
-
-    return  test;
+QSqlDatabase connection::getConnection()
+{
+    if (!QSqlDatabase::contains()) {
+        connection().createconnect(); // ensure connection is created
+    }
+    return QSqlDatabase::database();
 }

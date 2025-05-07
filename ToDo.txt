@@ -1,5 +1,7 @@
-add a foreign key to the DB.
-fix trier button to try just ('Poste','Gender').
+--ok--add a foreign key to the DB.
+--ok--fix add and modify and show.
+--ok--fix trier button to try just ('Poste','Gender').
+--ok--
 -stat: -add the employees who had affected to an etablissement
 change the functions to employee class.
        -print the employees who don't affected to an etablissment
